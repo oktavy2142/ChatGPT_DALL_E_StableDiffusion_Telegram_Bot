@@ -9,7 +9,6 @@ client = AsyncOpenAI(
     api_key=getenv("OPENAI_API_KEY"),
 )
 
-
 class OpenAiTools:
     async def get_chatgpt(start: int, messages: List[Tuple[int, str, str, int]]):
         mess = []
@@ -24,15 +23,9 @@ class OpenAiTools:
                 temperature=1,
             )
 
-            if response and response.choices:
-                return response.choices[0].message.content
-            else:
-                print("Invalid response format or empty response.")
-                return None
-
-        except Exception as e:
-            print(f"Error while calling ChatGPT API: {str(e)}")
-            return None
+            return response.choices[0].message.content
+        except:
+            return
 
     async def get_dalle(prompt: str):
         try:
@@ -43,12 +36,6 @@ class OpenAiTools:
                 n=1,
             )
 
-            if response and response.data:
-                return response.data[0].url
-            else:
-                print("Invalid response format or empty response.")
-                return None
-
-        except Exception as e:
-            print(f"Error while calling DALL-E API: {str(e)}")
-            return None
+            return response.data[0].url
+        except:
+            return

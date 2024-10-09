@@ -107,6 +107,7 @@ async def reduce_messages(messages: List[Tuple[int, str, str, int]]) -> Tuple[in
         await DataBase.delete_message(messages[i][0])
     return i+1, question_tokens
 
+# Answer Handling
 @dp.message(States.CHATGPT_STATE, F.text)
 async def chatgpt_answer_handler(message: types.Message, state: FSMContext):
     button = [[KeyboardButton(text="🔙Back")]]
@@ -124,32 +125,13 @@ async def chatgpt_answer_handler(message: types.Message, state: FSMContext):
 
         start, question_tokens = await reduce_messages(messages)
 
-        try:
-            # Логируем параметры перед отправкой запроса
-            await message.answer(
-                text=f"Sending request with messages: {messages[start:]}",
-                reply_markup=reply_markup,
-            )
-
-            answer = await OpenAiTools.get_chatgpt(start, messages)
-
-            # Логируем ответ для анализа
-            await message.answer(
-                text=f"📝 Full response: {str(answer)}",
-                reply_markup=reply_markup,
-            )
-        except Exception as e:
-            await message.answer(
-                text=f"❌An error occurred: {str(e)}",
-                reply_markup=reply_markup,
-            )
-            return
+        answer = await OpenAiTools.get_chatgpt(start, messages)
 
         if answer:
-            answer_tokens = len(await asyncio.get_running_loop().run_in_executor(None, encoding.encode, answer))
+            answer_tokens = len(await asyncio.get_running_loop().run_in_executor(None, encoding.encode,answer))
             await DataBase.save_message(user_id, "assistant", answer, answer_tokens)
 
-            result -= int(question_tokens * 0.25 + answer_tokens)
+            result -= int(question_tokens*0.25 + answer_tokens)
 
             if result > 0:
                 await DataBase.set_chatgpt(user_id, result)
@@ -157,74 +139,22 @@ async def chatgpt_answer_handler(message: types.Message, state: FSMContext):
                 await DataBase.set_chatgpt(user_id, 0)
 
             await message.answer(
-                text=answer,
+                text = answer,
                 reply_markup=reply_markup,
             )
         else:
             await DataBase.delete_message(messages[-1][0])
             await message.answer(
-                text="❌Your request activated the API's safety filters and could not be processed. Please modify the prompt and try again.",
+                text = "❌Your request activated the API's safety filters and could not be processed. Please modify the prompt and try again.",
                 reply_markup=reply_markup,
             )
 
     else:
         await message.answer(
-            text="❎You have 0 ChatGPT tokens. You need to buy them to use ChatGPT.",
+            text = "❎You have 0 ChatGPT tokens. You need to buy them to use ChatGPT.",
             reply_markup=reply_markup,
         )
     await state.set_state(States.CHATGPT_STATE)
-
-
-
-
-# Answer Handling
-# @dp.message(States.CHATGPT_STATE, F.text)
-# async def chatgpt_answer_handler(message: types.Message, state: FSMContext):
-#     button = [[KeyboardButton(text="🔙Back")]]
-#     reply_markup = ReplyKeyboardMarkup(
-#         keyboard = button, resize_keyboard=True
-#     )
-#
-#     user_id = message.from_user.id
-#     result = await DataBase.get_chatgpt(user_id)
-#
-#     if result > 0:
-#         await DataBase.save_message(user_id, "user", message.text, len(await asyncio.get_running_loop().run_in_executor(None, encoding.encode, message.text)))
-#
-#         messages = await DataBase.get_messages(user_id)
-#
-#         start, question_tokens = await reduce_messages(messages)
-#
-#         answer = await OpenAiTools.get_chatgpt(start, messages)
-#
-#         if answer:
-#             answer_tokens = len(await asyncio.get_running_loop().run_in_executor(None, encoding.encode,answer))
-#             await DataBase.save_message(user_id, "assistant", answer, answer_tokens)
-#
-#             result -= int(question_tokens*0.25 + answer_tokens)
-#
-#             if result > 0:
-#                 await DataBase.set_chatgpt(user_id, result)
-#             else:
-#                 await DataBase.set_chatgpt(user_id, 0)
-#
-#             await message.answer(
-#                 text = answer,
-#                 reply_markup=reply_markup,
-#             )
-#         else:
-#             await DataBase.delete_message(messages[-1][0])
-#             await message.answer(
-#                 text = "❌Your request activated the API's safety filters and could not be processed. Please modify the prompt and try again.",
-#                 reply_markup=reply_markup,
-#             )
-#
-#     else:
-#         await message.answer(
-#             text = "❎You have 0 ChatGPT tokens. You need to buy them to use ChatGPT.",
-#             reply_markup=reply_markup,
-#         )
-#     await state.set_state(States.CHATGPT_STATE)
 
 
 # Answer Handling
