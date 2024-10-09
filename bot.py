@@ -376,11 +376,6 @@ async def payments_webhook(request: Request):
             await bot.send_message(result[0], "✅You have received 50 Stable Diffusion image generations!")
     return 'OK', 200
 
-async def on_startup() -> None:
-    await DataBase.open_pool()
-    url_webhook = getenv("BASE_WEBHOOK_URL") + getenv("TELEGRAM_BOT_TOKEN")
-    await bot.set_webhook(url=url_webhook)
-
 
 async def on_startup() -> None:
     await DataBase.open_pool()
