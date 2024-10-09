@@ -357,29 +357,29 @@ async def bot_webhook(request: Request):
 
 
 # Checks payment
-@app.post("/webhook/{token}")
-async def payments_webhook(token: str, request: Request):
-    # Проверяем, что токен в URL соответствует токену бота
-    if token != getenv("CRYPTO_BOT_API_TOKEN"):
-        return {"status": "unauthorized"}, 403
-
+@app.post("/" + getenv("CRYPTOPAY_KEY"))
+async def payments_webhook(request: Request):
     data = await request.json()
-    update_type = data.get('update_type')
-
+    update_type = data['update_type']
     if update_type == "invoice_paid":
         invoice = data['payload']
         invoice_id = invoice['invoice_id']
         result = await DataBase.get_orderdata(invoice_id)
-        if result and result[1] == 'chatgpt':
+        if result[1] == 'chatgpt':
             await DataBase.update_chatgpt(result[0], invoice_id)
             await bot.send_message(result[0], "✅You have received 100000 ChatGPT tokens!")
-        elif result and result[1] == 'dall_e':
+        elif result[1] == 'dall_e':
             await DataBase.update_dalle(result[0], invoice_id)
             await bot.send_message(result[0], "✅You have received 50 DALL·E image generations!")
-        elif result and result[1] == 'stable':
+        elif result[1] == 'stable':
             await DataBase.update_stable(result[0], invoice_id)
             await bot.send_message(result[0], "✅You have received 50 Stable Diffusion image generations!")
-    return {"status": "ok"}
+    return 'OK', 200
+
+async def on_startup() -> None:
+    await DataBase.open_pool()
+    url_webhook = getenv("BASE_WEBHOOK_URL") + getenv("TELEGRAM_BOT_TOKEN")
+    await bot.set_webhook(url=url_webhook)
 
 
 async def on_startup() -> None:
