@@ -350,24 +350,52 @@ async def bot_webhook(token: str, request: Request):
 
 
 # Checks payment
-@app.post("/" + getenv("CRYPTOPAY_KEY"))
+@app.post("/payment/webhook")
 async def payments_webhook(request: Request):
-    data = await request.json()
-    update_type = data['update_type']
-    if update_type == "invoice_paid":
-        invoice = data['payload']
-        invoice_id = invoice['invoice_id']
-        result = await DataBase.get_orderdata(invoice_id)
-        if result[1] == 'chatgpt':
-            await DataBase.update_chatgpt(result[0], invoice_id)
-            await bot.send_message(result[0], "✅You have received 100000 ChatGPT tokens!")
-        elif result[1] == 'dall_e':
-            await DataBase.update_dalle(result[0], invoice_id)
-            await bot.send_message(result[0], "✅You have received 50 DALL·E image generations!")
-        elif result[1] == 'stable':
-            await DataBase.update_stable(result[0], invoice_id)
-            await bot.send_message(result[0], "✅You have received 50 Stable Diffusion image generations!")
-    return 'OK', 200
+    # Получаем ключ из переменной окружения
+    cryptopay_key = getenv("CRYPTOPAY_KEY")
+
+    # Проверяем наличие и валидность ключа, если нужно
+    if not cryptopay_key:
+        return {"status": "error", "message": "Missing CRYPTOPAY_KEY"}, 400
+
+    try:
+        # Получаем данные из запроса
+        data = await request.json()
+        update_type = data.get('update_type')
+
+        # Обрабатываем оплату, если статус - invoice_paid
+        if update_type == "invoice_paid":
+            invoice = data['payload']
+            invoice_id = invoice.get('invoice_id')
+
+            # Получаем информацию о заказе
+            result = await DataBase.get_orderdata(invoice_id)
+
+            if not result:
+                return {"status": "error", "message": "Order not found"}, 404
+
+            user_id, product = result
+
+            # Проверяем продукт и обновляем соответствующий баланс
+            if product == 'chatgpt':
+                await DataBase.update_chatgpt(user_id, invoice_id)
+                await bot.send_message(user_id, "✅You have received 100000 ChatGPT tokens!")
+            elif product == 'dall_e':
+                await DataBase.update_dalle(user_id, invoice_id)
+                await bot.send_message(user_id, "✅You have received 50 DALL·E image generations!")
+            elif product == 'stable':
+                await DataBase.update_stable(user_id, invoice_id)
+                await bot.send_message(user_id, "✅You have received 50 Stable Diffusion image generations!")
+            else:
+                return {"status": "error", "message": "Unknown product"}, 400
+
+        return {"status": "ok"}, 200
+    except Exception as e:
+        # Логируем ошибку для дебага
+        print(f"Error handling webhook: {e}")
+        return {"status": "error", "message": str(e)}, 500
+
 
 async def on_startup() -> None:
     await DataBase.open_pool()
