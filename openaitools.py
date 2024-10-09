@@ -19,7 +19,7 @@ class OpenAiTools:
         try:
             response = await client.chat.completions.create(
                 messages=mess,
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 max_tokens=16384,
                 temperature=1,
             )
