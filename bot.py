@@ -367,8 +367,9 @@ async def payments_webhook(request: Request):
 
 async def on_startup() -> None:
     await DataBase.open_pool()
-    url_webhook = getenv("BASE_WEBHOOK_URL") + getenv("TELEGRAM_BOT_TOKEN")
+    url_webhook = f"{getenv('BASE_WEBHOOK_URL')}/webhook/{getenv('TELEGRAM_BOT_TOKEN')}"
     await bot.set_webhook(url=url_webhook)
+
 
 if __name__ == '__main__':
     load_dotenv()
