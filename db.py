@@ -89,12 +89,14 @@ class DataBase:
                 await cursor.execute(f"UPDATE users SET stable_diffusion = stable_diffusion + 50 WHERE user_id = '{user_id}'")
                 await cursor.execute(f"DELETE FROM orders WHERE invoice_id = {invoice_id}")
                 await conn.commit()
+
     async def save_message(user_id: int, role: str, message: str, tokens: int):
         async with pool.connection() as conn:
             async with conn.cursor() as cursor:
-                conn.commit()
-                await cursor.execute("INSERT INTO messages(user_id, role, content, tokens) VALUES (%s, %s, %s, %s)", (user_id, role, message, tokens))
-                await conn.commit()
+                await cursor.execute("INSERT INTO messages(user_id, role, content, tokens) VALUES (%s, %s, %s, %s)",
+                                     (user_id, role, message, tokens))
+                await conn.commit()  # Этот вызов должен быть после выполнения запроса
+
     async def delete_message(id: int):
         async with pool.connection() as conn:
             async with conn.cursor() as cursor:
