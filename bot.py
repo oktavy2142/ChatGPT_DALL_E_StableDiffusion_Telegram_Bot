@@ -125,7 +125,13 @@ async def chatgpt_answer_handler(message: types.Message, state: FSMContext):
         start, question_tokens = await reduce_messages(messages)
 
         try:
+            # Попробуем получить ответ от OpenAI
             answer = await OpenAiTools.get_chatgpt(start, messages)
+            # Логируем сам ответ для анализа
+            await message.answer(
+                text=f"📝 Full response: {str(answer)}",
+                reply_markup=reply_markup,
+            )
         except Exception as e:
             await message.answer(
                 text=f"❌An error occurred: {str(e)}",
@@ -161,6 +167,7 @@ async def chatgpt_answer_handler(message: types.Message, state: FSMContext):
             reply_markup=reply_markup,
         )
     await state.set_state(States.CHATGPT_STATE)
+
 
 
 # Answer Handling
