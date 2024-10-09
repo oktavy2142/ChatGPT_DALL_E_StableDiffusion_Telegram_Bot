@@ -339,11 +339,15 @@ async def buy(message: types.Message, state: FSMContext):
     )
 
 # Processes message
-@app.post("/" + getenv("TELEGRAM_BOT_TOKEN"))
-async def bot_webhook(request: Request):
+@app.post("/webhook/{token}")
+async def bot_webhook(token: str, request: Request):
+    if token != getenv("TELEGRAM_BOT_TOKEN"):  # Проверяем токен в URL
+        return {"status": "unauthorized"}, 403
+
     update = types.Update(**await request.json())
     await dp.feed_webhook_update(bot, update)
-    return web.Response()
+    return {"status": "ok"}
+
 
 # Checks payment
 @app.post("/" + getenv("CRYPTOPAY_KEY"))
