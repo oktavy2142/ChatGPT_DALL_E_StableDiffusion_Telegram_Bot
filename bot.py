@@ -125,9 +125,15 @@ async def chatgpt_answer_handler(message: types.Message, state: FSMContext):
         start, question_tokens = await reduce_messages(messages)
 
         try:
-            # Попробуем получить ответ от OpenAI
+            # Логируем параметры перед отправкой запроса
+            await message.answer(
+                text=f"Sending request with messages: {messages[start:]}",
+                reply_markup=reply_markup,
+            )
+
             answer = await OpenAiTools.get_chatgpt(start, messages)
-            # Логируем сам ответ для анализа
+
+            # Логируем ответ для анализа
             await message.answer(
                 text=f"📝 Full response: {str(answer)}",
                 reply_markup=reply_markup,
@@ -167,6 +173,7 @@ async def chatgpt_answer_handler(message: types.Message, state: FSMContext):
             reply_markup=reply_markup,
         )
     await state.set_state(States.CHATGPT_STATE)
+
 
 
 
